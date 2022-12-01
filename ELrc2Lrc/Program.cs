@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -95,54 +96,64 @@ foreach (var filePath in filePaths)
     Console.WriteLine(filePath);
 }
 Console.WriteLine(Local.Total + filePaths.Count);
-Console.WriteLine(Local.ChoiceMode);
 Console.WriteLine(Local.ModeList);
+Console.Write(Local.ChoiceMode);
 
 switch (Console.ReadLine())
 {
     case "1":
-        foreach (var filePath in filePaths)
-        {
-            Console.WriteLine(filePath);
-            string lrc = "";
-            using (var sr = new StreamReader(filePath))
-            {
-                lrc = sr.ReadToEnd();
-            }
-            //Console.WriteLine("before\n" + lrc);
-            lrc = Regex.Replace(lrc, @"<[0-9:.]+?>", ""); // 去除尖括号时间标签
-
-            var  = Regex.Matches(lrc, @"\[[a-zA-Z]+:?.+?]"); // 去除空行
-
-            lrc = Regex.Replace(lrc, @"\n\s*\r", ""); // 去除空行
-
-
-            //Console.WriteLine("after\n" + lrc);
-            using (var wr = new StreamWriter(filePath))
-            {
-                wr.Write(lrc);
-            }
-        }
+        foreach (var filePath in filePaths) { ConvertTimetAndId(filePath); }
         break;
-    case "2": 
+    case "2":
 
         break;
-    default: 
-
+    default:
+        foreach (var filePath in filePaths) { ConvertTimetAndId(filePath); }
         break;
 }
 
 Console.WriteLine(Local.PressToEnd);
 Console.ReadLine();
 
-static string ConvertTimeTag(string lrc)
+static void ConvertTimetAndId(string filePath)
 {
-    
-}
+    string lrc = "";
+    using (var sr = new StreamReader(filePath))
+    {
+        lrc = sr.ReadToEnd();
+    }
+    //Console.WriteLine("before\n" + lrc);
 
-static string CleanIdTag(string lrc)
-{
+    var timeIdRegex = new Regex(@"<[0-9:.]+?>"); // 时间标签
+    var idTagRegex = new Regex(@"\[([a-zA-Z]+):?.+?]"); // ID 标签
+    var emptyLineRegex = new Regex(@"\n\s*\r"); // 空行
 
+    var timeIdMatches = timeIdRegex.Matches(lrc);
+    var idTagMatches = idTagRegex.Matches(lrc);
+    var emptyLineMatches = emptyLineRegex.Matches(lrc);
+
+    int idTagRemoveCount = 0;
+    string[] standardIdTags = { "ar", "al", "ti", "au", "length", "by", "offset", "re", "ve" };
+    foreach (Match idTagMatch in idTagMatches)
+    {
+        GroupCollection groupIdTag = idTagMatch.Groups;
+        if (!standardIdTags.Contains(groupIdTag[1].Value))
+        {
+            lrc = lrc.Replace(idTagMatch.Value, "");
+            idTagRemoveCount++;
+        }
+    }
+
+    lrc = Regex.Replace(lrc, @"<[0-9:.]+?>", ""); // 去除尖括号时间标签
+    lrc = Regex.Replace(lrc, @"\n\s*\r", ""); // 去除空行
+
+
+    //Console.WriteLine("after\n" + lrc);
+    //using (var wr = new StreamWriter(filePath))
+    //{
+    //    wr.Write(lrc);
+    //}
+    Console.WriteLine("{0}[{1}{2,4}][{3}{4,2}][{5}{6,2}] {7}", Local.Removed, Local.NumTimeTag, timeIdMatches.Count, Local.NumIdTag, idTagRemoveCount, Local.NumEmptyLine, emptyLineMatches.Count, filePath);
 }
 
 static List<string> GetFiles(string directory, string pattern = "*.lrc")
@@ -185,6 +196,11 @@ static class Local
     public static string PressNo { get => GetLocal(); }
     public static string ChoiceMode { get => GetLocal(); }
     public static string ModeList { get => GetLocal(); }
+    public static string Removed { get => GetLocal(); }
+    public static string NumIdTag { get => GetLocal(); }
+    public static string NumTimeTag { get => GetLocal(); }
+    public static string NumEmptyLine { get => GetLocal(); }
+
 
     static string[,] langArr = new string[,] {
         {"InputPath","请输入路径：","Please input path:" },
@@ -200,12 +216,18 @@ static class Local
         {"ConfirmLrc","这似乎不是一个歌词文件，是或否？输入 Y 或 N（默认是 N）：","This does not appear to be a lyrics file, Yes or no, press Y or N (Default is N):" },
         {"PressYes","你选择是","You choose yes." },
         {"PressNo","你选择否","You choose no." },
-        {"SelectMode","请选择模式（默认是模式 1）：","Please select a mode (Default is Mode 1):" },
-        {"ModeList'",
-            "1.转换为标准时间标签、清除非标准 ID 标签" +
+        {"ChoiceMode","请选择模式（默认是模式 1）：","Please select a mode (Default is Mode 1):" },
+        {"ModeList",
+            "1.转换为标准时间标签、清除非标准 ID 标签\n" +
             "2.仅转换为标准时间标签",
-            "1.Convert to standard time tags, clear non-standard ID tags." +
+            "1.Convert to standard time tags, clear non-standard ID tags.\n" +
             "2.Convert to standard time tags only." },
+        {"Removed","已移除","Removed" },
+        {"NumIdTag","ID 标签","ID tags" },
+        {"NumTimeTag","时间标签","Time tags" },
+        {"NumEmptyLine","空行","Empty Lines" },
+
+
 
     };
     private static string GetLocal([CallerMemberName] string str = "Error")
