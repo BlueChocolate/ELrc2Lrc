@@ -16,7 +16,8 @@ if (args.Length == 0) //直接打开
         default: Local.CurrentLanguage = Local.Language.English; break;
     }
     Console.Clear();
-
+    Console.WriteLine(Local.Intro);
+    Console.WriteLine();
     while (true)
     {
         // 输入路径
@@ -134,36 +135,52 @@ static string ConvertTimetAndId(string filePath, string[] standardIdTags =null)
     {
         lrc = sr.ReadToEnd();
     }
-    //Console.WriteLine("before\n" + lrc);
+    //Console.WriteLine("[before]" + lrc);
 
-    var timeIdRegex = new Regex(@"<[0-9:.]+?>"); // 时间标签
-    var idTagRegex = new Regex(@"\[([a-zA-Z]+):?.+?]"); // ID 标签
+    var wordTimeRegex = new Regex(@"<[0-9:.]+?>"); // 单词时间标签
+    var idTagRegex = new Regex(@"\[([a-zA-Z]+):?.+?\]"); // ID 标签
     var emptyLineRegex = new Regex(@"\n\s*\r"); // 空行
-    var consecutiveSpacesRegex = new Regex(@"\s{2,}"); // 连续空格
+    var consecutiveSpacesRegex = new Regex(@"[ ]{2,}"); // 连续空格
+    var lineTimeRegex = new Regex(@"\[[0-9:\.]+\]?"); // 行时间标签
 
-
-    var timeIdMatches = timeIdRegex.Matches(lrc);
+    var timeIdMatches = wordTimeRegex.Matches(lrc);
     var idTagMatches = idTagRegex.Matches(lrc);
     var emptyLineMatches = emptyLineRegex.Matches(lrc);
+    var lineTimeMatches = lineTimeRegex.Matches(lrc);
+
+    int lineTimeCount = 0;
+    foreach (Match match in lineTimeMatches)
+    {
+        lrc = lrc.Insert(match.Index + 2*(lineTimeCount++), "\r\n");
+    }
+
+    int idTagCount = 0;
+    foreach (Match match in idTagMatches)
+    {
+        lrc = lrc.Insert(match.Index + 2 * (idTagCount++), "\r\n");
+    }
 
     int idTagRemoveCount = 0;
     standardIdTags ??= new string[]{ "ar", "al", "ti", "au", "length", "by", "offset", "re", "ve" }; // 其实就是参数默认值
-    foreach (Match idTagMatch in idTagMatches)
+    foreach (Match match in idTagMatches)
     {
-        GroupCollection groupIdTag = idTagMatch.Groups;
+        GroupCollection groupIdTag = match.Groups;
+        //int removeConut = 0;
         if (!standardIdTags.Contains(groupIdTag[1].Value))
         {
-            lrc = lrc.Replace(idTagMatch.Value, "");
+            //lrc = lrc.Remove(match.Index, match.Length);
+            lrc = lrc.Replace(match.Value, "");
             idTagRemoveCount++;
         }
     }
 
-    lrc = timeIdRegex.Replace(lrc, ""); // 去除尖括号时间标签
+    lrc = wordTimeRegex.Replace(lrc, ""); // 去除尖括号时间标签
+    lrc = consecutiveSpacesRegex.Replace(lrc, " "); // 去除连续空格
     lrc = emptyLineRegex.Replace(lrc, ""); // 去除空行
-    lrc = consecutiveSpacesRegex.Replace(lrc, ""); // 去除连续空格
 
 
-    //Console.WriteLine("after\n" + lrc);
+
+    //Console.WriteLine("[after]" + lrc);
     using (var wr = new StreamWriter(filePath))
     {
         wr.Write(lrc);
@@ -197,6 +214,7 @@ static class Local
 {
     public enum Language { Chinese, English }
     public static Language CurrentLanguage { get; set; }
+    public static string Intro { get => GetLocal(); }
     public static string InputPath { get => GetLocal(); }
     public static string IsFile { get => GetLocal(); }
     public static string IsFolder { get => GetLocal(); }
@@ -218,7 +236,13 @@ static class Local
 
 
     static string[,] langArr = new string[,] {
-        {"Intro","工具可以将增强歌词格式（Enhanced LRC format）文件转换为标准的歌词格式文件（Simple LRC format）：","Please input path:" },
+        {"Intro",
+            "本工具可以将增强歌词格式（Enhanced LRC format）文件转换为简单歌词格式文件（Simple LRC format）"+ Environment.NewLine +
+            "简单歌词格式示例：[mm:ss.xx]这是一行歌词吗"+ Environment.NewLine +
+            "增强歌词格式示例：[mm:ss.xx]<mm:ss.xx>确<mm:ss.xx>实<mm:ss.xx>",
+            "This tool can convert Enhanced LRC format files to Simple LRC format files" + Environment.NewLine +
+            "Simple LRC format example:[00:12.00]Line 1 lyrics" + Environment.NewLine +
+            "Enhanced LRC format example:[mm:ss.xx] <mm:ss.xx> line 1 word 1 <mm:ss.xx> line 1 word 2 <mm:ss.xx>" },
         {"InputPath","请输入路径：","Please input path:" },
         {"IsFile","这是一个文件","It's a file." },
         {"IsFolder","这是一个文件夹","It's a folder." },
@@ -234,15 +258,15 @@ static class Local
         {"PressNo","你选择否","You choose no." },
         {"ChoiceMode","请选择模式：","Please select a mode:" },
         {"ModeList",
-            "1.转换为标准时间标签、清除非标准 ID 标签（默认）\n" +
-            "2.转换为标准时间标签、清除所有 ID 标签\n" +
-            "3.仅转换为标准时间标签\n" +
-            "4.仅清除非标准 ID 标签\n" +
+            "1.转换为简单时间标签、清除非标准 ID 标签（默认）" + Environment.NewLine +
+            "2.转换为简单时间标签、清除所有 ID 标签" + Environment.NewLine +
+            "3.仅转换为标准时间标签" + Environment.NewLine +
+            "4.仅清除非标准 ID 标签" + Environment.NewLine +
             "5.清除所有 ID 标签",
-            "1.Convert to standard time tags, clear non-standard ID tags(Default)\n" +
-            "2.Convert to standard time tags, clear all ID tags\n" +
-            "3.Convert to standard time tags only\n" +
-            "4.Clear non-standard ID tags\n" +
+            "1.Convert to simple time tags, clear non-standard ID tags(Default)" + Environment.NewLine +
+            "2.Convert to simple time tags, clear all ID tags" + Environment.NewLine +
+            "3.Convert to standard time tags only" + Environment.NewLine +
+            "4.Clear non-standard ID tags" + Environment.NewLine +
             "5.Clear all ID tags" },
         {"Removed","已移除","Removed" },
         {"NumIdTag","ID标签","ID tags" },
