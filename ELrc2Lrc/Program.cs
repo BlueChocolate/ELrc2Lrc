@@ -244,9 +244,9 @@ static class Local
             "Simple LRC format example:[00:12.00]Line 1 lyrics" + Environment.NewLine +
             "Enhanced LRC format example:[mm:ss.xx] <mm:ss.xx> line 1 word 1 <mm:ss.xx> line 1 word 2 <mm:ss.xx>" },
         {"InputPath","请输入路径：","Please input path:" },
-        {"IsFile","这是一个文件","It's a file." },
-        {"IsFolder","这是一个文件夹","It's a folder." },
-        {"PathIllegal","路径非法！","The path is illegal." },
+        {"IsFile","这是一个文件","It's a file" },
+        {"IsFolder","这是一个文件夹","It's a folder" },
+        {"PathIllegal","路径非法！","The path is illegal" },
         {"Detecting","检测中...","Detecting..." },
         {"Finish","完成","Finished." },
         {"Error","错误！","Error!" },
@@ -254,8 +254,8 @@ static class Local
         {"AskEndAdd","继续吗？输入 Q 结束添加","Continue? Please enter Q to end adding files." },
         {"PressToEnd","按任意键结束程序...","Press any key to end the program..." },
         {"ConfirmLrc","这似乎不是一个歌词文件，请选择是或否？输入 Y 或 N（默认是 N）：","This does not appear to be a lyrics file, Yes or no? press Y or N(Default is N):" },
-        {"PressYes","你选择是","You choose yes." },
-        {"PressNo","你选择否","You choose no." },
+        {"PressYes","你选择是","You choose yes" },
+        {"PressNo","你选择否","You choose no" },
         {"ChoiceMode","请选择模式：","Please select a mode:" },
         {"ModeList",
             "1.转换为简单时间标签、清除非标准 ID 标签（默认）" + Environment.NewLine +
